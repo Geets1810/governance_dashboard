@@ -24,3 +24,4 @@ This project is a bite-sized simulation of the model governance analytics I buil
 
 ## Note on data
 All data is simulated to reflect governance patterns observed in regulated financial environments.
+# governance_dashboard
