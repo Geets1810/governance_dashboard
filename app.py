@@ -10,7 +10,7 @@ st.set_page_config(page_title="Model Governance Dashboard", layout="wide")
 # --------------------------------------------------
 @st.cache_resource
 def get_connection():
-    return duckdb.connect("data/governance.duckdb", read_only=True)
+     return duckdb.connect(database=":memory:")
 
 con = get_connection()
 
@@ -26,7 +26,7 @@ st.sidebar.header("Filters")
 
 snapshot_dates = get_df("""
     SELECT DISTINCT snapshot_month
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     ORDER BY snapshot_month
 """)["snapshot_month"]
 
@@ -38,7 +38,7 @@ selected_snapshot = st.sidebar.selectbox(
 
 business_domains = get_df("""
     SELECT DISTINCT business_domain
-    FROM dim_model
+    FROM read_csv_auto('data/dim_model.csv')
     ORDER BY business_domain
 """)["business_domain"]
 
@@ -60,7 +60,7 @@ con.execute("""
 # --------------------------------------------------
 base_df = get_df(f"""
     SELECT *
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     WHERE snapshot_month = '{selected_snapshot}'
       AND business_domain IN (SELECT * FROM selected_domains_tbl)
 """)
@@ -74,7 +74,7 @@ overdue_trend = get_df("""
     SELECT
         snapshot_month,
         COUNT(*) AS overdue_count
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     WHERE overdue_flag = 'Y'
       AND business_domain IN (SELECT * FROM selected_domains_tbl)
     GROUP BY snapshot_month
@@ -93,7 +93,7 @@ open_closed = get_df("""
         snapshot_month,
         review_status,
         COUNT(*) AS count
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     WHERE business_domain IN (SELECT * FROM selected_domains_tbl)
     GROUP BY snapshot_month, review_status
 """)
@@ -115,7 +115,7 @@ median_overdue = get_df("""
     SELECT
         business_domain,
         MEDIAN(days_overdue) AS median_days_overdue
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     WHERE overdue_flag = 'Y'
       AND snapshot_month = ?
       AND business_domain IN (SELECT * FROM selected_domains_tbl)
@@ -142,7 +142,7 @@ sla_buckets = get_df("""
             ELSE '90+'
         END AS sla_bucket,
         COUNT(*) AS count
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     WHERE overdue_flag = 'Y'
       AND snapshot_month = ?
       AND business_domain IN (SELECT * FROM selected_domains_tbl)
@@ -165,8 +165,8 @@ validator_backlog = get_df("""
     SELECT
         p.person_name AS lead_validator,
         COUNT(*) AS open_reviews
-    FROM fact_model_review_backlog_monthly f
-    LEFT JOIN dim_person p
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv') f
+    LEFT JOIN read_csv_auto('data/dim_person.csv') p
       ON f.lead_validator_person_id = p.person_id
     WHERE f.review_status = 'Open'
       AND f.snapshot_month = ?
@@ -189,7 +189,7 @@ risk_dist = get_df("""
     SELECT
         current_risk_tier,
         COUNT(*) AS count
-    FROM fact_model_review_backlog_monthly
+    FROM read_csv_auto('data/fact_model_review_backlog_monthly.csv')
     WHERE snapshot_month = ?
       AND business_domain IN (SELECT * FROM selected_domains_tbl)
     GROUP BY current_risk_tier
