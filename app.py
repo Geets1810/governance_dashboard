@@ -20,6 +20,13 @@ def get_df(query, params=None):
     return con.execute(query).df()
 
 # --------------------------------------------------
+#  page_title
+# --------------------------------------------------
+st.title("Model Governance Dashboard")
+
+st.caption("📘 [Guide: How to read this dashboard](Guide)")
+st.divider()
+# --------------------------------------------------
 # Sidebar Filters
 # --------------------------------------------------
 st.sidebar.header("Filters")
